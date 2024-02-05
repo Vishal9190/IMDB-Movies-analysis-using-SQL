@@ -80,3 +80,56 @@ from hindi_actress_rank where movie_count>=2;
  
 # Yami Gautam,Tapsee Pannu,Bhumi Pednekar,Anjali Patil,Shraddha Kapoor are the top five actresses
 
+7- Determine the top two production houses that have produced the highest number of hits among multilingual movies.
+
+select m.production_company,
+count(m.id) as movie_count,
+rank() over(order by count(m.id)desc ) as prod_rank
+from movies m left join ratings r on r.movie_id=m.id
+where production_company is not null and median_rating > 8
+and languages like "%,%"
+group by production_company
+limit 2
+#Star Cinema and Ave Fenix Pictures are the top two production houses 
+
+8- Identify the top three actresses based on the number of Super Hit movies (average rating > 8) in the drama genre.
+
+select name, count(rm.movie_id) count_of_superhit_movies from names n
+join role_mapping rm on n.id = rm.name_id
+join ratings r on r.movie_id = rm.movie_id
+join genre g on g.movie_id = rm.movie_id
+where avg_rating > 8 and category = 'actress' and genre = 'drama'
+group by name
+order by count_of_superhit_movies desc
+limit 3;
+
+#Parvathy Thiruvothu, Susan Brown, Denise Gough are the top three actresses
+
+9-	Retrieve details for the top nine directors based on the number of movies, 
+including average inter-movie duration, ratings
+
+with top_directors as 
+(
+select director_id,director_name from (
+select n.id as director_id,n.name as director_name,count(m.id) as movie_count,
+row_number() over(order by count(m.id) desc) as director_rank from names n
+inner join director_mapping d on n.id=d.name_id
+inner join movies m on m.id=d.movie_id
+group by 1,2)t where director_rank <=9),
+
+movie_summary as ( select n.id as director_id,n.name as director_name,m.id as movie_id,r.avg_rating,r.total_votes,
+m.duration,m.date_published, lead(date_published) over(partition by n.id order by m.date_published) as next_date_published,
+DATEDIFF(lead(date_published) over(partition by n.id order by m.date_published),
+m.date_published) AS INTER_MOVIE_DAYS
+from names n
+inner join director_mapping d on n.id=d.name_id
+inner join movies m on m.id=d.movie_id
+inner join ratings r on r.movie_id=m.id
+where n.id in (select director_id from top_directors))
+
+select director_id,director_name,count(distinct movie_id) as number_of_movies,avg(inter_movie_days)as avg_inter_movie_days,
+round(sum(avg_rating*total_votes)/sum(total_votes),2) as directors_avg_rating,
+sum(total_votes) as total_votes,sum(avg_rating) as min_rating,max(avg_rating) as max_rating,sum(duration) as total_movie_duration
+from movie_summary 
+group by 1,2
+order by number_of_movies desc,directors_avg_rating desc
