@@ -1,0 +1,82 @@
+1-	Identifying the columns in the names table that have null values.
+
+select id from names where id is null
+select name from names where name is null
+select height from names where height is null
+select date_of_birth from names where date_of_birth is null
+select known_for_movies from names where known_for_movies is null
+# height ,date_of_birth,known_for_movies has null values 
+
+2 -	Determining the top three directors in the top three genres with movies having an average rating > 8.
+
+with top_genre as(
+select genre , count(g.movie_id) as num_of_movies
+from genre g inner join ratings r on r.movie_id=g.movie_id
+where avg_rating>8
+group by genre order by num_of_movies desc limit 3)
+
+select n.name as top_director ,count(m.id) as count_of_movies 
+from names n inner join director_mapping dm on dm.name_id=n.id
+inner join movies m on m.id=dm.movie_id 
+inner join genre g on g.movie_id = m.id 
+inner join ratings r on r.movie_id=m.id
+where avg_rating>8 and genre in (select genre from top_genre)
+group by n.name
+order by count_of_movies desc limit 3;
+
+#James Mangold is the top director 
+
+
+
+3-	Find the top two actors whose movies have a median rating >= 8.
+
+select n.name, count(rm.movie_id) as total_movies from names n 
+join role_mapping rm on n.id=rm.name_id
+join ratings r on r.movie_id=rm.movie_id where r.median_rating >= 8 and category='actor'
+group by n.name 
+order by total_movies desc 
+limit 2;
+
+#mohanlal and mamooty are the top actors
+
+4- Identify the top three production houses based on the number of votes received by their movies.
+
+select production_company,sum(total_votes) as num_of_votes from movies m join ratings r on r.movie_id=m.id
+group by production_company
+having production_company is not null
+order by num_of_votes desc
+limit 3
+
+5- Rank of actors based on their average ratings in Indian movies released in India.
+
+select n.name as actor_name,sum( total_votes) as total_votes, count(r.movie_id) as movie_count,
+round(sum(avg_rating*total_votes)/sum(total_votes),2) as actor_avg_rating,
+row_number() over(order by round(sum(avg_rating*total_votes)/sum(total_votes),2)   desc, count(r.movie_id) desc) as ranking
+from movies as  m join ratings as r on m.id=r.movie_id
+join role_mapping as rm on m.id=rm.movie_id
+join names as n on rm.name_id=n.id
+where country like 'India' and category ='actor'
+group by name
+having movie_count >= 5;
+
+# Vijay Sethupathi is the top actor having average rating of 8.42 and Prabhu Deva is the worst actor having average rating of 5.68
+
+6- Identify the top five actresses in Hindi movies released in India based on their average ratings.
+
+with hindi_actress_rank as
+	(select n.name as actress_name,
+		sum( total_votes) as total_votes, 
+		count(r.movie_id) as movie_count, 	
+		round(sum(avg_rating*total_votes)/sum(total_votes),2) as actress_avg_rating
+	from movies as  m
+	join ratings as r on m.id=r.movie_id
+	join role_mapping as rm on m.id=rm.movie_id
+	join names as n on rm.name_id=n.id
+	where country like 'India' and category ='actress' and languages='hindi'
+	group by name
+	)
+    select * , rank () over (order by actress_avg_rating desc,total_votes desc) as actress_rank
+from hindi_actress_rank where movie_count>=2;
+ 
+# Yami Gautam,Tapsee Pannu,Bhumi Pednekar,Anjali Patil,Shraddha Kapoor are the top five actresses
+
