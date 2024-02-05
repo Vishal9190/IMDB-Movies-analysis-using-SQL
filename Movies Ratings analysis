@@ -1,0 +1,59 @@
+1.Retrieving the minimum and maximum values in each column of the ratings table (except movie_id).
+
+SELECT
+MIN(avg_rating) AS min_avg_rating,MAX(avg_rating) AS max_avg_rating,
+MIN(total_votes) AS min_total_votes,MAX(total_votes) AS max_total_votes,
+MIN(median_rating) AS min_median_rating,MAX(median_rating) AS max_median_rating
+FROM ratings;
+
+# minimum avg_rating is 1 and maximum avg_rating is 10
+# minimum total_votes is 100 and maximum total_votes is 725138
+# minimum median_rating is 1 and  maximum median_rating is 10
+
+2.Identifying the top 10 movies based on average rating.
+
+select title,avg_rating from ratings r 
+inner join movies m on m.id=r.movie_id
+order by avg_rating desc
+limit 10
+
+# Love in Kilnerry and Kirket has maximum average rating of 10
+
+3. Summarising the ratings table based on movie counts by median ratings.
+
+select count(movie_id)as movie_count,median_rating from ratings 
+group by median_rating
+order by median_rating desc
+
+# 346 movies has median_rating of 10
+
+4.Identify the production house that has produced the most number of hit movies (average rating > 8).
+
+select production_company from 
+(select
+production_company,
+count(id) as num_of_movies
+from movies m
+join ratings r on r.movie_id=m.id
+where production_company is not null  and avg_rating>8
+group by production_company
+order by num_of_movies desc) t
+limit 1
+
+# Dream Warrior Pictures has produced the most number of hit movies
+
+5.Determine the number of movies released in each genre during March 2017 in the USA with more than 1,000 votes.
+
+ select genre,count(*) as num_of_movies
+from movies m join ratings r on r.movie_id=m.id join genre g on g.movie_id=m.id 
+where country like'%USA%' and date_published like '____3_2017' and total_votes>1000
+group by genre 
+order by num_of_movies desc 
+
+# Drama has maximum number which is 24 movies which are released during March 2017 in the USA with more than 1,000 votes.
+
+6.Retrieve movies of each genre starting with the word 'The' and having an average rating > 8.
+
+select title,avg_rating,genre
+from movies m join genre g on g.movie_id=m.id join ratings r on r.movie_id=m.id
+where avg_rating>8 and lower(title) like '%The%'
