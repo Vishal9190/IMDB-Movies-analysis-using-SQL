@@ -1,0 +1,17 @@
+1. Total number of movies released each year and analyse the month-wise trend.
+
+select count(*)  as total_num_of_movies, month(STR_to_date(date_published,'%d-%m-%Y')) as month,year
+from movies 
+group by year ,month
+order by year asc ,month
+
+# In 2017, 3052 movies were released
+#  In 2018 , 2944 movies were released
+ # In 2019, 2001 movies were released
+
+2. Number of movies produced in the USA or India in the year 2019
+
+select count(title) as num_of_movies from movies
+where year = 2019 and (lower(country) like '%usa%' or lower(country) like '%india%') ;
+
+# 1059 is the number of movies produced in the USA or India in the year 2019
