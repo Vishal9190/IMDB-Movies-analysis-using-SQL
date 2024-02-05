@@ -44,3 +44,50 @@ order by num_of_movies desc)
 select rnk from rank_of_genre where lower(genre)='Thriller'
 
 # rank of thriller is 3
+
+6.	Classify thriller movies based on average ratings into different categories.
+
+select title,avg_rating ,
+case when avg_rating>8 then 'Superhit'
+	when avg_rating between 7.0 and 8.0 then 'Hit'
+	when avg_rating between 5.0 and 7.0 then 'One Time Watch'
+    else 'Flop' end Category 
+from genre g join movies m on m.id=g.movie_id join ratings r on r.movie_id=g.movie_id
+where genre = 'Thriller' and total_votes>25000
+
+7. Analyse the genre-wise running total and moving average of the average movie duration.
+
+ with genre_summary as 
+(select genre,avg(duration) as avg_duration from  genre g left join 
+movies m on g.movie_id=m.id
+group by genre)
+select genre,avg_duration,sum(avg_duration) over (order by avg_duration desc) as running_total,
+avg(avg_duration) over (order by avg_duration desc) as moving_average from genre_summary;
+
+#Horror has the highest running total and Action has highest moving average and Average duration
+
+8.	Identify the five highest-grossing movies of each year that belong to the top three genres.
+
+with top_genre as
+(select genre,count(m.id) as movie_count
+from genre g left join movies m on g.movie_id=m.id
+group by genre 
+order by movie_count desc 
+limit 3)
+select * from (
+select genre,year,m.title as movie_name,
+worlwide_gross_income, 
+rank() over (partition by genre,year order by cast(replace(trim(worlwide_gross_income),"$ " , "")as unsigned)
+desc) as movie_rank 
+from movies m inner join genre g on g.movie_id=m.id 
+
+where g.genre in (select genre from top_genre)) t
+where movie_rank <=5;
+
+-- genre, year, movie_name, worlwide_gross_income, movie_rank
+-- 'Comedy', '2017', 'Despicable Me 3', '$ 1034799409', '1'
+-- 'Comedy', '2017', 'Jumanji: Welcome to the Jungle', '$ 962102237', '2'
+-- 'Drama', '2017', 'Zhan lang II', '$ 870325439', '1'
+-- 'Drama', '2017', 'Logan', '$ 619021436', '2'
+-- 'Thriller', '2017', 'The Fate of the Furious', '$ 1236005118', '1'
+-- 'Thriller', '2017', 'Zhan lang II', '$ 870325439', '2'
