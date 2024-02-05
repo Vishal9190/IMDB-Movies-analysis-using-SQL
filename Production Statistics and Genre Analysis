@@ -1,0 +1,46 @@
+1. Unique list of genres present in the dataset.
+
+select  distinct(genre) from genre
+ #there are 13 unique genres 
+
+2. Identifying the genre with the highest number of movies produced overall.
+
+select count(m.title) as num_of_movies,
+g.genre
+from movies m
+inner join genre g on g.movie_id=m.id
+group by g.genre
+order by num_of_movies desc
+limit 1
+
+# Drama is the genre with the highest number of movies produced
+
+3. The number of movies that belong to only one genre.
+
+select count(*) as num_of_movies from (
+select count(g.genre)as num_of_genre,m.title
+from movies m
+join genre g on g.movie_id=m.id
+group by m.title
+having num_of_genre=1) t
+
+# 3245 is the count of movies that belongs to only one genre
+
+4. Average duration of movies in each genre.
+
+select avg(m.duration) as avg_duration, g.genre
+from movies m
+join genre  g on g.movie_id=m.id
+group by g.genre order by avg_duration desc
+
+# action genre has highest average duration and Horror has lowest average duration
+
+5. Rank of the 'thriller' genre among all genres in terms of the number of movies produced.
+
+with rank_of_genre as(select genre,count(movie_id) as num_of_movies,rank() over(order by count(movie_id) desc ) as rnk
+from genre g join movies m on m.id=g.movie_id
+group by genre
+order by num_of_movies desc)
+select rnk from rank_of_genre where lower(genre)='Thriller'
+
+# rank of thriller is 3
